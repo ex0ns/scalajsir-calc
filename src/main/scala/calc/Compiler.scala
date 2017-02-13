@@ -67,12 +67,21 @@ object Compiler {
    *  This is the main method you have to implement.
    */
   def compileExpr(tree: Tree): irt.Tree = {
-    // TODO
     implicit val pos = tree.pos
 
     tree match {
       case Literal(value) =>
         irt.DoubleLiteral(value)
+
+      case BinaryOp(op, lhs, rhs) =>
+        val bOp = op match {
+          case "*" => irt.BinaryOp.Double_*
+          case "/" => irt.BinaryOp.Double_/
+          case "+" => irt.BinaryOp.Double_+
+          case "-" => irt.BinaryOp.Double_-
+        }
+        irt.JSBinaryOp(bOp, compileExpr(lhs), compileExpr(rhs))
+
 
       case _ =>
         throw new Exception(

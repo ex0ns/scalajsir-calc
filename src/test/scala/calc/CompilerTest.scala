@@ -47,4 +47,29 @@ class CompilerTest {
     assertCompile(irt.DoubleLiteral(234), Literal(234))
   }
 
+  @Test def compileBinaryOpPlus(): Unit = {
+    assertCompile(irt.JSBinaryOp(irt.BinaryOp.Double_+, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
+      BinaryOp("+", Literal(4), Literal(5)))
+  }
+
+  @Test def compileBinaryOpMinus(): Unit = {
+    assertCompile(irt.JSBinaryOp(irt.BinaryOp.Double_-, irt.DoubleLiteral(10), irt.DoubleLiteral(4)),
+      BinaryOp("-", Literal(10), Literal(4)))
+  }
+
+
+  @Test def compileBinaryOpMul(): Unit = {
+    assertCompile(irt.JSBinaryOp(irt.BinaryOp.Double_*, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
+      BinaryOp("*", Literal(4), Literal(5)))
+  }
+
+
+  @Test def compileBinaryOpDiv(): Unit = {
+    assertCompile(irt.JSBinaryOp(irt.BinaryOp.Double_/, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
+      BinaryOp("/", Literal(4), Literal(5)))
+  }
+
+
+
+
 }
