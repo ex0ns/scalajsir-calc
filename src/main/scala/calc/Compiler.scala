@@ -9,6 +9,7 @@ import ir.Definitions._
  *  You have to implement the method `compileExpr`.
  */
 object Compiler {
+  case class BranchTypeException(msg: String) extends Exception
   final val MainObjectFullName = "main.Main"
 
   private final val MainClassFullName = MainObjectFullName + "$"
@@ -89,6 +90,17 @@ object Compiler {
 
       case Ident(name) =>
         irt.VarRef(irt.Ident(name))(envType(name))
+
+      case If(cond, thenp, elsep) =>
+        val thenBranch = compileExpr(thenp)
+        val elseBranch = compileExpr(elsep)
+        val condTree = compileExpr(cond)
+
+        if(thenBranch.tpe != elseBranch.tpe)
+          throw new BranchTypeException(s"Branches do not have the same type ${thenBranch.tpe}, ${elseBranch.tpe}")
+
+        val doubleCond = irt.BinaryOp(irt.BinaryOp.!==, condTree, irt.DoubleLiteral(0.0))
+        irt.If(doubleCond, thenBranch, elseBranch)(thenBranch.tpe)
 
       case _ =>
         throw new Exception(

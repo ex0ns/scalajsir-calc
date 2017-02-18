@@ -1,11 +1,10 @@
 package calc
 
-import fastparse.core.Parsed
-import org.junit.Test
 import org.junit.Assert._
+import org.junit.Test
 import org.scalajs.core.ir
-import ir.{Trees => irt, Types => irtpe}
-import ir.Definitions._
+import org.scalajs.core.ir.Definitions._
+import org.scalajs.core.ir.{Trees => irt, Types => irtpe}
 
 /** Tests focused on the Compiler.
   *
@@ -84,8 +83,14 @@ class CompilerTest {
           irt.Ident("x"), irtpe.DoubleType, mutable = false, irt.DoubleLiteral(7.0)
         ),
         irt.BinaryOp(irt.BinaryOp.Double_+, irt.VarRef(irt.Ident("x"))(irtpe.DoubleType), irt.DoubleLiteral(6.0))),
-      Let(Ident(letIdent), Literal(7), BinaryOp("+", Ident(letIdent), Literal(6))))
+      parseExpr(s"let $letIdent = 7 in $letIdent + 6"))
   }
 
+  @Test def compileIf(): Unit = {
+    assertCompile(
+      irt.If(
+        irt.BinaryOp(irt.BinaryOp.!==, irt.DoubleLiteral(7.0), irt.DoubleLiteral(0.0)),
+        irt.DoubleLiteral(5), irt.DoubleLiteral(3))(irtpe.DoubleType), parseExpr("if(7) 5 else 3"))
+  }
 
 }
