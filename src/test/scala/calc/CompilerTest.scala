@@ -48,35 +48,40 @@ class CompilerTest {
   }
 
   @Test def compileBinaryOpPlus(): Unit = {
-    assertCompile(irt.JSBinaryOp(irt.BinaryOp.Double_+, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
+    assertCompile(irt.BinaryOp(irt.BinaryOp.Double_+, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
       BinaryOp("+", Literal(4), Literal(5)))
   }
 
   @Test def compileBinaryOpMinus(): Unit = {
-    assertCompile(irt.JSBinaryOp(irt.BinaryOp.Double_-, irt.DoubleLiteral(10), irt.DoubleLiteral(4)),
+    assertCompile(irt.BinaryOp(irt.BinaryOp.Double_-, irt.DoubleLiteral(10), irt.DoubleLiteral(4)),
       BinaryOp("-", Literal(10), Literal(4)))
   }
 
   @Test def compileBinaryOpMul(): Unit = {
-    assertCompile(irt.JSBinaryOp(irt.BinaryOp.Double_*, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
+    assertCompile(irt.BinaryOp(irt.BinaryOp.Double_*, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
       BinaryOp("*", Literal(4), Literal(5)))
   }
 
   @Test def compileBinaryOpDiv(): Unit = {
-    assertCompile(irt.JSBinaryOp(irt.BinaryOp.Double_/, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
+    assertCompile(irt.BinaryOp(irt.BinaryOp.Double_/, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
       BinaryOp("/", Literal(4), Literal(5)))
   }
 
   @Test def compileNestedBinaryOp(): Unit = {
-    assertCompile(irt.JSBinaryOp(irt.BinaryOp.Double_/,
-      irt.JSBinaryOp(irt.BinaryOp.Double_*, irt.DoubleLiteral(7), irt.DoubleLiteral(8)),
+    assertCompile(irt.BinaryOp(irt.BinaryOp.Double_/,
+      irt.BinaryOp(irt.BinaryOp.Double_*, irt.DoubleLiteral(7), irt.DoubleLiteral(8)),
       irt.DoubleLiteral(5)),
       BinaryOp("/", BinaryOp("*", Literal(7), Literal(8)), Literal(5)))
   }
 
   @Test def compileLetExpression(): Unit = {
     val letIdent = "x"
-    assertCompile(irt.Block(),
+    assertCompile(
+      irt.Block(
+        irt.VarDef(
+          irt.Ident("x"), irtpe.DoubleType, mutable = false, irt.DoubleLiteral(7.0)
+        ),
+        irt.BinaryOp(irt.BinaryOp.Double_+, irt.VarRef(irt.Ident("x"))(irtpe.DoubleType), irt.DoubleLiteral(6.0))),
       Let(Ident(letIdent), Literal(7), BinaryOp("+", Ident(letIdent), Literal(6))))
   }
 
