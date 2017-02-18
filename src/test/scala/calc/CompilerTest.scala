@@ -40,38 +40,40 @@ class CompilerTest {
     val actualHash = hashOf(actual)
 
     assertTrue(s"Expected $expected but got $actual",
-      ir.Hashers.hashesEqual(actualHash, expectedHash, considerPos = true))
+      ir.Hashers.hashesEqual(actualHash, expectedHash, considerPos = false))
   }
 
+  private def parseExpr(expr: String) = Parser.parse(expr).get.value
+
   @Test def compileLiteral(): Unit = {
-    assertCompile(irt.DoubleLiteral(234), Literal(234))
+    assertCompile(irt.DoubleLiteral(234), parseExpr("234"))
   }
 
   @Test def compileBinaryOpPlus(): Unit = {
     assertCompile(irt.BinaryOp(irt.BinaryOp.Double_+, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
-      BinaryOp("+", Literal(4), Literal(5)))
+      parseExpr("4+5"))
   }
 
   @Test def compileBinaryOpMinus(): Unit = {
     assertCompile(irt.BinaryOp(irt.BinaryOp.Double_-, irt.DoubleLiteral(10), irt.DoubleLiteral(4)),
-      BinaryOp("-", Literal(10), Literal(4)))
+      parseExpr("10-4"))
   }
 
   @Test def compileBinaryOpMul(): Unit = {
     assertCompile(irt.BinaryOp(irt.BinaryOp.Double_*, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
-      BinaryOp("*", Literal(4), Literal(5)))
+      parseExpr("4*5"))
   }
 
   @Test def compileBinaryOpDiv(): Unit = {
     assertCompile(irt.BinaryOp(irt.BinaryOp.Double_/, irt.DoubleLiteral(4), irt.DoubleLiteral(5)),
-      BinaryOp("/", Literal(4), Literal(5)))
+      parseExpr("4/5"))
   }
 
   @Test def compileNestedBinaryOp(): Unit = {
     assertCompile(irt.BinaryOp(irt.BinaryOp.Double_/,
       irt.BinaryOp(irt.BinaryOp.Double_*, irt.DoubleLiteral(7), irt.DoubleLiteral(8)),
       irt.DoubleLiteral(5)),
-      BinaryOp("/", BinaryOp("*", Literal(7), Literal(8)), Literal(5)))
+      parseExpr("7*8/5"))
   }
 
   @Test def compileLetExpression(): Unit = {
