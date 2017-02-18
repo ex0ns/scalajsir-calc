@@ -34,7 +34,7 @@ object Compiler {
             irt.StoreModule(classType, irt.This()(classType)))))(
         irt.OptimizerHints.empty, None)
 
-    val body = compileExpr(tree)
+    val body = compileExpr(tree)(Map[String, irtpe.Type]())
     val methodDef = irt.MethodDef(static = false,
         irt.Ident("main__D", Some("main")), Nil, irtpe.DoubleType, body)(
         irt.OptimizerHints.empty, None)
@@ -66,7 +66,7 @@ object Compiler {
    *
    *  This is the main method you have to implement.
    */
-  def compileExpr(tree: Tree): irt.Tree = {
+  def compileExpr(tree: Tree)(implicit envType: Map[String, irtpe.Type]): irt.Tree = {
     implicit val pos = tree.pos
 
     tree match {
@@ -80,8 +80,15 @@ object Compiler {
           case "+" => irt.BinaryOp.Double_+
           case "-" => irt.BinaryOp.Double_-
         }
-        irt.JSBinaryOp(bOp, compileExpr(lhs), compileExpr(rhs))
+        irt.BinaryOp(bOp, compileExpr(lhs), compileExpr(rhs))
 
+      case Let(name, value, body) =>
+        val t = compileExpr(value)
+        val q = irt.VarDef(irt.Ident(name.name), t.tpe, mutable = false, t)
+        irt.Block(List(q, compileExpr(body)(envType + (name.name -> t.tpe))))
+
+      case Ident(name) =>
+        irt.VarRef(irt.Ident(name))(envType(name))
 
       case _ =>
         throw new Exception(
