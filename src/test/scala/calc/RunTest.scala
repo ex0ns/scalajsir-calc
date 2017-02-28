@@ -38,4 +38,16 @@ class RunTest {
     assertRun(54.3, "54.3")
   }
 
+  @Test def runPlus(): Unit = {
+    assertRun(5.3, "5+0.3");
+  }
+
+  @Test def runLet(): Unit = {
+    assertRun(5.3, "let x = 5 in x + 0.3")
+  }
+
+  @Test def runClosure(): Unit = {
+    assertRun(5.3, "let f = fun (x) = { x } in f (5.3)")
+  }
+
 }

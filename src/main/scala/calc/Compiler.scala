@@ -5,9 +5,9 @@ import ir.{Trees => irt, Types => irtpe}
 import ir.Definitions._
 
 /** Main compiler.
- *
- *  You have to implement the method `compileExpr`.
- */
+  *
+  *  You have to implement the method `compileExpr`.
+  */
 object Compiler {
   case class BranchTypeException(msg: String) extends Exception
   final val MainObjectFullName = "main.Main"
@@ -15,9 +15,9 @@ object Compiler {
   private final val MainClassFullName = MainObjectFullName + "$"
 
   /** Compile an expression tree into a full `ClassDef`.
-   *
-   *  You do not need to modify this method.
-   */
+    *
+    *  You do not need to modify this method.
+    */
   def compileMainClass(tree: Tree): irt.ClassDef = {
     implicit val pos = tree.pos
 
@@ -25,48 +25,48 @@ object Compiler {
     val classType = irtpe.ClassType(className)
 
     val ctorDef = irt.MethodDef(static = false,
-        irt.Ident("init___", Some("<init>")), Nil, irtpe.NoType,
-        irt.Block(List(
-            irt.ApplyStatically(irt.This()(classType),
-                irtpe.ClassType(ObjectClass),
-                irt.Ident("init___", Some("<init>")),
-                Nil)(
-                irtpe.NoType),
-            irt.StoreModule(classType, irt.This()(classType)))))(
-        irt.OptimizerHints.empty, None)
+      irt.Ident("init___", Some("<init>")), Nil, irtpe.NoType,
+      irt.Block(List(
+        irt.ApplyStatically(irt.This()(classType),
+          irtpe.ClassType(ObjectClass),
+          irt.Ident("init___", Some("<init>")),
+          Nil)(
+          irtpe.NoType),
+        irt.StoreModule(classType, irt.This()(classType)))))(
+      irt.OptimizerHints.empty, None)
 
     val body = compileExpr(tree)(Map[String, irtpe.Type]())
     val methodDef = irt.MethodDef(static = false,
-        irt.Ident("main__D", Some("main")), Nil, irtpe.DoubleType, body)(
-        irt.OptimizerHints.empty, None)
+      irt.Ident("main__D", Some("main")), Nil, irtpe.DoubleType, body)(
+      irt.OptimizerHints.empty, None)
 
     val exportedMethodDef = irt.MethodDef(static = false,
-        irt.StringLiteral("main"), Nil, irtpe.AnyType,
-        irt.Apply(irt.This()(classType), irt.Ident("main__D", Some("main")),
-            Nil)(irtpe.DoubleType))(
-        irt.OptimizerHints.empty, None)
+      irt.StringLiteral("main"), Nil, irtpe.AnyType,
+      irt.Apply(irt.This()(classType), irt.Ident("main__D", Some("main")),
+        Nil)(irtpe.DoubleType))(
+      irt.OptimizerHints.empty, None)
 
     val exportedModuleDef = irt.ModuleExportDef(MainObjectFullName)
 
     val allDefs = List(ctorDef, methodDef, exportedMethodDef, exportedModuleDef)
 
     val classDef = irt.ClassDef(
-        irt.Ident(className),
-        ir.ClassKind.ModuleClass,
-        Some(irt.Ident(ObjectClass)),
-        Nil,
-        None,
-        allDefs)(
-        irt.OptimizerHints.empty)
+      irt.Ident(className),
+      ir.ClassKind.ModuleClass,
+      Some(irt.Ident(ObjectClass)),
+      Nil,
+      None,
+      allDefs)(
+      irt.OptimizerHints.empty)
 
     ir.Hashers.hashClassDef(classDef)
   }
 
   /** Compile an expression tree into an IR `Tree`, which is an expression
-   *  that evaluates to the result of the tree.
-   *
-   *  This is the main method you have to implement.
-   */
+    *  that evaluates to the result of the tree.
+    *
+    *  This is the main method you have to implement.
+    */
   def compileExpr(tree: Tree)(implicit envType: Map[String, irtpe.Type]): irt.Tree = {
     implicit val pos = tree.pos
 
@@ -89,6 +89,7 @@ object Compiler {
         irt.Block(List(q, compileExpr(body)(envType + (name.name -> t.tpe))))
 
       case Ident(name) =>
+        if(!envType.contains(name)) throw new Exception(s"$name not defined in env")
         irt.VarRef(irt.Ident(name))(envType(name))
 
       case If(cond, thenp, elsep) =>
@@ -102,9 +103,22 @@ object Compiler {
         val doubleCond = irt.BinaryOp(irt.BinaryOp.!==, condTree, irt.DoubleLiteral(0.0))
         irt.If(doubleCond, thenBranch, elseBranch)(thenBranch.tpe)
 
+      case Closure(params, body) =>
+        /*
+          Closure's parameters type must be defined as `any`, we must cast it (irt.Unbox) to double (no high order function _yet_)
+         */
+        val paramsDef = params.map(x => irt.ParamDef(irt.Ident(x.name), irtpe.AnyType, mutable = false, rest = false))
+        val paramsDecl = params.map(x => irt.VarDef(irt.Ident(x.name), irtpe.DoubleType, mutable = false, irt.Unbox(irt.VarRef(irt.Ident(x.name))(irtpe.AnyType), 'D')))
+        val newEnvType = envType ++ params.map(_.name -> irtpe.DoubleType)
+        irt.Closure(List(), paramsDef, irt.Block(paramsDecl ++ List(compileExpr(body)(newEnvType))), List())
+
+      case Call(fun, args) =>
+        /* Same here, JSFunctionApply is of type Any, we unbox it to return DoubleType */
+        irt.Unbox(irt.JSFunctionApply(compileExpr(fun), args.map(compileExpr(_))), 'D')
+
       case _ =>
         throw new Exception(
-            s"Cannot yet compile a tree of class ${tree.getClass}")
+          s"Cannot yet compile a tree of class ${tree.getClass}")
     }
   }
 }

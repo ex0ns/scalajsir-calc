@@ -93,4 +93,20 @@ class CompilerTest {
         irt.DoubleLiteral(5), irt.DoubleLiteral(3))(irtpe.DoubleType), parseExpr("if(7) 5 else 3"))
   }
 
+  @Test def compileFunctionNoParams(): Unit = {
+    assertCompile(irt.Closure(List(), List(), irt.DoubleLiteral(5), List()),
+      parseExpr("fun () = { 5 }"))
+  }
+
+  @Test def compileFunctionSingleParams(): Unit = {
+    assertCompile(
+      irt.Closure(List(),
+        List(irt.ParamDef(irt.Ident("x"), irtpe.DoubleType, mutable = false, rest = false)),
+        irt.Block(List(
+          irt.VarDef(irt.Ident("x"), irtpe.DoubleType, mutable = false, irt.VarRef(irt.Ident("x"))(irtpe.DoubleType)),
+          irt.VarRef(irt.Ident("x"))(irtpe.DoubleType))),
+        List()),
+      parseExpr("fun (x) = { x }"))
+  }
+
 }
